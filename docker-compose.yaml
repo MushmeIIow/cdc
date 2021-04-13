@@ -1,0 +1,54 @@
+version: '3.5'
+
+volumes:
+#   victoria-metrics-data: {}
+  postgres-data: {}
+#   postgres-replica-data: {}
+#   vmagent-data: {}
+#   grafana-data: {}
+#   tempo-data: {}
+#   redis-data: {}
+
+networks:
+  cdc-net: {}
+
+
+services:
+  # postgres database
+  postgres:
+    image: postgres:10.16-alpine
+    container_name: postgres
+    networks: ['cdc-net']
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_MULTIPLE_DATABASES: pgcdc
+      
+    
+  # cdc service
+  cdc-service:
+    networks: ['cdc-net']
+    restart: always
+    depends_on: ['postgres']
+    image: cdc-service
+    build: ./cdc-service/
+    volumes:
+      - ./config.yml:/etc/cdc-config.yml
+    environment:
+      CDC_SERVICE_CONFIG: /etc/cdc-config.yml
+  
+  # cdc client
+  cdc-client:
+    networks: ['cdc-net']
+    restart: always
+    depends_on: ['postgres', 'cdc-service']
+    image: cdc-client
+    build: ./cdc-client/
+    environment:
+      CONN_STRING: postgres://postgres:postgres@postgres/pgcdc?replication=database

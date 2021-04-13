@@ -1,0 +1,15 @@
+listener:
+  slotName: myslot_1
+  refreshConnection: 30s
+  heartbeatInterval: 10s
+logger:
+  caller: false
+  level: info
+  humanReadable: true
+database:
+  host: postgres
+  port: 5432
+  name: pgcdc
+  user: postgres
+  debug: false
+  password: postgres
